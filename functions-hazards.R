@@ -1,14 +1,13 @@
 ## Functions related to hazard analysis
-library(segmented)
+## library(segmented)
+## source("~/work/functions/functions.R")
 
-bclong1 <- read.csv("~/work/data/data/long-bc-derived.csv")
-bc <- subset(bclong1, stat == "ALIVE" & bvgrowth>=0)
-bc$sdpclass <- factor(as.numeric(bc$sdpclass))
+## bclong1 <- read.csv("~/work/data/data/long-bc-derived.csv")
+## bc <- subset(bclong1, stat == "ALIVE" & bvgrowth>=0)
+## bc$sdpclass <- factor(as.numeric(bc$sdpclass))
 
-tst <- subset(bc, install == 1 & plot == 16 & time == 76)
-pb <- tst$priorbv
-bv <- tst$bvgrowth
-bounds <- cont2class(tst, "priorbv", 3)
+## tst <- subset(bc, install == 1 & plot == 10 & time == 97)
+
 
 ######################################################################################
 ##
@@ -19,22 +18,173 @@ bounds <- cont2class(tst, "priorbv", 3)
 ##  model that also predicts bole volume growth that is not correlated to observed
 ##  bole volume at the end of the prediction period
 ## Model selection:
-## - Choose best model by MSE
+## - Choose best model by RMSE
 ## - If best model significantly correlated to bv at end of period, try next best
 ## - Possible models: linear, power, segmented linear, polynomials
-removeCorr <- function(dat, colm) {
+removeCorr <- function(dat, models = c("lin","pow","poly"),
+                       depen = "bvgrowth", indep = "priorbv", indep2 = "bv",
+                       degree = 9) {
+    if (length(models) < 1) stop("Must specify models: lin, pow, poly")
+    dep <- dat[,depen]
+    ind <- dat[,indep]
+    ind2 <- dat[,indep2]
     pval <- 0
-    segs <- 2
-    while (pval < 0.05) { # While the data is correlated
-        bounds <- cont2class(dat, colm, segs) # size class boundaries
-        ## Fit to each size class
-        for (i in 1:nrow(bounds)) {
-
+    numTries = 20
+    removed <- c()
+    while (pval < 0.05 & numTries > 0) { # While the data is correlated
+        if (!"lin" %in% removed) {
+            fit.lin <- lm(dep ~ ind)
+            rmse.lin <- sqrt(sum(residuals(fit.lin)^2))
+            rgr.lin <- dep/predict(fit.lin)
+            cor.lin <- cor.test(rgr.lin, ind2)$p.value
+        }
+        if(!"pow" %in% removed) {
+            fit.pow <- NULL
+            try(fit.pow <- nls(dep ~ a*ind^b, start = list(a=0.5,b=0.5),
+                               control = nls.control(warnOnly = TRUE)),silent = TRUE)
+            if (is.null(fit.pow)) fit.pow <- findPowerFit(dep, ind)
+            if (!is.null(fit.pow)) {
+                rmse.pow <- sqrt(sum(residuals(fit.pow)^2))
+                rgr.pow <- dep/predict(fit.pow)
+                cor.pow <- cor.test(rgr.pow, ind2)$p.value
+            }
+        }
+        if(!"poly" %in% removed) {
+            polyn <- bestPoly(dat, polys = degree)
+            degree <- polyn[["degree"]]
+            fit.poly <- lm(as.formula(polyNoInt(degree,indep,depen)), data = dat)
+            rmse.poly <- polyn[["rmse"]]
+            rgr.poly <- dep/predict(fit.poly)
+            cor.poly <- cor.test(rgr.poly, ind2)$p.value
+        }
+        ## get best RMSE, check p-value, repeat without best if necessary
+        stillhere <- models[!models %in% removed]
+        if (length(stillhere) < 1) break;
+        possibles<- paste0("rmse.",stillhere)
+        rmses <- sapply(possibles, function(x) if (exists(x)) get(x))
+        best <- rmses[which(rmses==min(rmses))]
+        bestMOD <- gsub(".*[.]", "", names(best))
+        pval <- get(paste0("cor",".",bestMOD))
+        print(pval)
+        ## If p-value < 0.05 repeat without model (or in case of poly, with restricted
+        ##  degree untill reaching degree 1
+        if (pval < 0.05) {
+            numTries = numTries - 1
+            print(paste("removing:",bestMOD))
+            if (bestMOD == "poly" & degree > 2)
+                degree <- degree-1
+            else
+                removed <- c(removed, bestMOD)
         }
     }
+    if (bestMOD != "poly") degree <- 0
+    rgr = get(paste("rgr", bestMOD, sep = "."))
+    data.frame(
+        rgr = rgr,
+        rmse = rep(get(paste0("rmse.", bestMOD)), length(rgr)),
+        corr = rep(get(paste0("cor.", bestMOD)), length(rgr)),
+        model = rep(bestMOD, length(rgr)),
+        degree = rep(degree, length(rgr)))
 }
 
-## Function takes a range of polynomials and returns the polynomial best suited
-##  (determined by the above conditions)
-remCorrPoly <- function(
 
+## helper function to output results to data.frame for removeCorr
+## Returns rgrs, rmse, corrs, model type, degree (0 if not polynomial)
+returnDat <- function(bestMOD) {
+    rgr = get(paste("rgr", bestMOD, sep = "."))
+    data.frame(
+        rgr = rgr,
+        rmse = rep(get(paste0("rmse.", bestMOD)), length(rgr)),
+        corr = rep(get(paste0("cor.", bestMOD)), length(rgr)),
+        model = rep(bestMOD, length(rgr)),
+        degree = rep(degree, length(rgr)))
+}
+
+## Function takes a range of polynomials and returns the polynomial best fitted
+## NOTE: allows for the removal of intercept (set the intercept to be 0)
+## To determine goodness of fit:
+## - Iterate from lowest to highest
+## - If coefficients lose significance stop and compare most recent to previous
+##   by AIC
+## - Choose the best of those and return that
+bestPoly <- function(dat, ind = "priorbv", dep = "bvgrowth", polys = 9, corr = 0.05,
+                     show = FALSE) {
+    bestRMSE <- Inf
+    best <- NULL
+    rmse <- NULL
+    nonSig <- 0
+    for (i in 2:polys) {
+        if (show==TRUE)
+            print(paste("Fitting degree",i))
+        fit <- NULL
+        form <- polyNoInt(i,ind,dep)
+        try(fit <- lm(as.formula(form), data = dat), silent=TRUE)
+        if (!is.null(fit)) { ## Successful poly fit, check significance of coefs
+            summ <- summary(fit)$coefficients[,4]
+            nonSig <- length(summ[summ > corr])
+            rmse <- sqrt(sum(residuals(fit)^2))
+            if (show==TRUE)
+                print(paste("rmse of", rmse))
+            if (rmse < bestRMSE) {
+                best <- i
+                bestRMSE <- rmse
+            }
+        }
+        if (is.null(fit)) { ## Fit failed, return the last polynomial as the best
+            i = i-1
+            break
+        }
+        if (nonSig > 0) { ## non-significant coefs, compare to last and return best
+            last <- lm(as.formula(polyNoInt(i-1,ind,dep)),data = dat)
+            ifelse(AIC(last) < AIC(fit),
+               { i = i-1; nonSig <- 0; break }, { break })
+        }
+    }
+    results <- c(degree = i, rmse = rmse, numInsigCoefs = nonSig, aic = AIC(fit))
+    return (results)
+}
+
+## Helper function for bestPoly to make a formula for a polynomial without an intercept
+## Takes integer argument defining the degree of the polynomial, ind. var, and dep. var
+## Return form: dep ~ -1 + ind + I(ind^2) + ... + I(ind^n)
+polyNoInt <- function(degs, ind, dep) {
+    form <- paste(dep,"~","-1")
+    for (i in 1:degs) {
+        form <- paste0(form," + ","I(",ind,"^",i,")")
+    }
+    return(form)
+}
+
+## If power fitting fails in removeCorr this function will search more extensively
+##  for a possible fit, and if it fails it will return NULL
+findPowerFit <- function(depen, indep) {
+    arange <- seq(.1,1,.1)
+    brange <- seq(0.01,.5,length.out = 10)
+    possibles <- expand.grid(a = arange,b = brange)
+    fit <- NULL
+    try(fit <- nls(depen ~ a * indep^b, start = list(a=0.5, b=0.01)),silent=TRUE)
+    if (is.null(fit)) {
+        for (row in 1:nrow(possibles)) {
+            start = list(a = possibles[row,"a"], b = possibles[row, "b"])
+            try(fit <- nls(depen ~ a * indep^b, start = start),silent = TRUE)
+            if (!is.null(fit)) break;
+        }
+    }
+    return(fit)
+}
+
+dat <- tst
+indep <- "priorbv"
+depen <- "bvgrowth"
+
+## ## Testing
+## x <- lm(bvgrowth ~ poly(priorbv, 11), data = tst)
+## plot(tst$priorbv, residuals(x))
+## rgr <- tst$bvgrowth/predict(x)
+## cor.test(tst$bvgrowth, rgr)
+
+
+## library(polynom)
+## plot(poly.calc(1:13))
+## plot(tst$priorbv, tst$bvgrowth)
+## curve(tst$bvgrowth~ poly(x, 13), add=TRUE)
