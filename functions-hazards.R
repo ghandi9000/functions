@@ -20,7 +20,7 @@
 ## Model selection:
 ## - Choose best model by RMSE
 ## - If best model significantly correlated to bv at end of period, try next best
-## - Possible models: linear, power, segmented linear, polynomials
+## - Possible models: linear, power, polynomials, segmented linear
 removeCorr <- function(dat, models = c("lin","pow","poly"),
                        depen = "bvgrowth", indep = "priorbv", indep2 = "bv",
                        degree = 9) {
@@ -143,6 +143,16 @@ bestPoly <- function(dat, ind = "priorbv", dep = "bvgrowth", polys = 9, corr = 0
     results <- c(degree = i, rmse = rmse, numInsigCoefs = nonSig, aic = AIC(fit))
     return (results)
 }
+ind <- "priorbv"
+dep <- "bvgrowth"
+tst1 <- lm(as.formula(polyNoInt(4, ind, dep)), data = tst)
+tst2 <- lm(as.formula(polyNoInt(3, ind, dep)), data = tst)
+summary(tst1)
+summary(tst2)
+plot(tst$priorbv, tst$bvgrowth)
+points(tst$priorbv, predict(tst1), col = "blue")
+points(tst$priorbv, predict(tst2), col = "green")
+
 
 ## Helper function for bestPoly to make a formula for a polynomial without an intercept
 ## Takes integer argument defining the degree of the polynomial, ind. var, and dep. var
