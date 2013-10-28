@@ -179,12 +179,12 @@ bestPoly <- function(dat, ind = "priorbv", dep = "bvgrowth", polys = 9, corr = 0
 }
 
 ## Testing
-## ind <- "priorbv"
-## dep <- "bvgrowth"
-## tst1 <- lm(as.formula(polyNoInt(2, ind, dep)), data = tst)
-## tst2 <- lm(as.formula(polyNoInt(3, ind, dep)), data = tst)
-## summary(tst1)
-## summary(tst2)
+ind <- "priorbv"
+dep <- "bvgrowth"
+tst1 <- lm(as.formula(polyNoInt(2, ind, dep)), data = tst)
+tst2 <- lm(as.formula(polyNoInt(3, ind, dep)), data = tst)
+summary(tst1)
+summary(tst2)
 ## plot(tst$priorbv, tst$bvgrowth)
 ## points(tst$priorbv, predict(tst1), col = "blue")
 ## points(tst$priorbv, predict(tst2), col = "green")
