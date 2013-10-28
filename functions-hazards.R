@@ -21,10 +21,11 @@
 ## - Choose best model by RMSE
 ## - If best model significantly correlated to bv at end of period, try next best
 ## - Possible models: linear, power, polynomials, segmented linear
-removeCorr <- function(dat, models = c("lin","pow","poly"),
+library(segmented)
+removeCorr <- function(dat, models = c("lin","pow","poly","seg"),
                        depen = "bvgrowth", indep = "priorbv", indep2 = "bv",
-                       degree = 9) {
-    if (length(models) < 1) stop("Must specify models: lin, pow, poly")
+                       degree = 9, debug = FALSE, scottLRS = TRUE) {
+    if (length(models) < 1) stop("Must specify models: lin, pow, poly, seg")
     dep <- dat[,depen]
     ind <- dat[,indep]
     ind2 <- dat[,indep2]
@@ -37,17 +38,36 @@ removeCorr <- function(dat, models = c("lin","pow","poly"),
             rmse.lin <- sqrt(sum(residuals(fit.lin)^2))
             rgr.lin <- dep/predict(fit.lin)
             cor.lin <- cor.test(rgr.lin, ind2)$p.value
+            if (scottLRS == TRUE)
+                cor.lin <- cor.test(predictLRS(fit.lin, ind, ind2), rgr.lin)$p.value
+        }
+        if (!"seg" %in% removed) {
+            fit.seg <- lm(dep ~ ind)
+            try(fit.seg <- segmented(fit.seg, seg.Z = ~ind, psi = 2),silent = TRUE)
+            if (!all(predict(fit.seg) == predict(fit.lin))) { # seg successful
+                rmse.seg <- sqrt(sum(residuals(fit.seg)^2))
+                rgr.seg <- dep/predict(fit.seg)
+                cor.seg <- cor.test(rgr.seg, ind2)$p.value
+                if (scottLRS == TRUE)
+                    cor.seg <- cor.test(predictLRS(fit.seg, ind, ind2), rgr.seg)$p.value
+            }
+            else { # remove seg model
+                if (debug == TRUE)
+                    print(paste("Removing segmented model: fit failed"))
+                removed <- c(removed, "seg")
+            }
         }
         if(!"pow" %in% removed) {
-            fit.pow <- NULL
-            try(fit.pow <- nls(dep ~ a*ind^b, start = list(a=0.5,b=0.5),
-                               control = nls.control(warnOnly = TRUE)),silent = TRUE)
+            fit.pow <- NULL # control = nls.control(warnOnly = TRUE)
+            try(fit.pow <- nls(dep ~ a*ind^b, start = list(a=0.5,b=0.5)), silent = TRUE)
             if (is.null(fit.pow)) fit.pow <- findPowerFit(dep, ind)
             if (!is.null(fit.pow)) {
                 rmse.pow <- sqrt(sum(residuals(fit.pow)^2))
                 rgr.pow <- dep/predict(fit.pow)
                 cor.pow <- cor.test(rgr.pow, ind2)$p.value
             }
+            if (scottLRS == TRUE)
+                cor.pow <- cor.test(predictLRS(fit.pow, ind, ind2), rgr.pow)$p.value
         }
         if(!"poly" %in% removed) {
             polyn <- bestPoly(dat, polys = degree)
@@ -56,6 +76,8 @@ removeCorr <- function(dat, models = c("lin","pow","poly"),
             rmse.poly <- polyn[["rmse"]]
             rgr.poly <- dep/predict(fit.poly)
             cor.poly <- cor.test(rgr.poly, ind2)$p.value
+            if (scottLRS == TRUE)
+                cor.poly <- cor.test(predictLRS(fit.poly, ind, ind2), rgr.poly)$p.value
         }
         ## get best RMSE, check p-value, repeat without best if necessary
         stillhere <- models[!models %in% removed]
@@ -65,7 +87,12 @@ removeCorr <- function(dat, models = c("lin","pow","poly"),
         best <- rmses[which(rmses==min(rmses))]
         bestMOD <- gsub(".*[.]", "", names(best))
         pval <- get(paste0("cor",".",bestMOD))
-        print(pval)
+        ## debug
+        if (debug == TRUE) {
+            print(c("Remaining models:",paste(stillhere)))
+            print(paste("Poly degree:", degree))
+            print(pval)
+        }
         ## If p-value < 0.05 repeat without model (or in case of poly, with restricted
         ##  degree untill reaching degree 1
         if (pval < 0.05) {
@@ -87,6 +114,13 @@ removeCorr <- function(dat, models = c("lin","pow","poly"),
         degree = rep(degree, length(rgr)))
 }
 
+## helper function to predict LRS
+## takes a model, prior and current (i.e. priorbv and bv)
+## LRS = priorbv + predicted bvgrowth / max bv
+predictLRS <- function(mod, prior, current) {
+    LRS = (prior + predict(mod))/max(current)
+    return(LRS)
+}
 
 ## helper function to output results to data.frame for removeCorr
 ## Returns rgrs, rmse, corrs, model type, degree (0 if not polynomial)
@@ -108,13 +142,13 @@ returnDat <- function(bestMOD) {
 ##   by AIC
 ## - Choose the best of those and return that
 bestPoly <- function(dat, ind = "priorbv", dep = "bvgrowth", polys = 9, corr = 0.05,
-                     show = FALSE) {
+                     debug = FALSE) {
     bestRMSE <- Inf
     best <- NULL
     rmse <- NULL
     nonSig <- 0
     for (i in 2:polys) {
-        if (show==TRUE)
+        if (debug==TRUE)
             print(paste("Fitting degree",i))
         fit <- NULL
         form <- polyNoInt(i,ind,dep)
@@ -123,7 +157,7 @@ bestPoly <- function(dat, ind = "priorbv", dep = "bvgrowth", polys = 9, corr = 0
             summ <- summary(fit)$coefficients[,4]
             nonSig <- length(summ[summ > corr])
             rmse <- sqrt(sum(residuals(fit)^2))
-            if (show==TRUE)
+            if (debug==TRUE)
                 print(paste("rmse of", rmse))
             if (rmse < bestRMSE) {
                 best <- i
@@ -143,15 +177,17 @@ bestPoly <- function(dat, ind = "priorbv", dep = "bvgrowth", polys = 9, corr = 0
     results <- c(degree = i, rmse = rmse, numInsigCoefs = nonSig, aic = AIC(fit))
     return (results)
 }
-ind <- "priorbv"
-dep <- "bvgrowth"
-tst1 <- lm(as.formula(polyNoInt(4, ind, dep)), data = tst)
-tst2 <- lm(as.formula(polyNoInt(3, ind, dep)), data = tst)
-summary(tst1)
-summary(tst2)
-plot(tst$priorbv, tst$bvgrowth)
-points(tst$priorbv, predict(tst1), col = "blue")
-points(tst$priorbv, predict(tst2), col = "green")
+
+## Testing
+## ind <- "priorbv"
+## dep <- "bvgrowth"
+## tst1 <- lm(as.formula(polyNoInt(2, ind, dep)), data = tst)
+## tst2 <- lm(as.formula(polyNoInt(3, ind, dep)), data = tst)
+## summary(tst1)
+## summary(tst2)
+## plot(tst$priorbv, tst$bvgrowth)
+## points(tst$priorbv, predict(tst1), col = "blue")
+## points(tst$priorbv, predict(tst2), col = "green")
 
 
 ## Helper function for bestPoly to make a formula for a polynomial without an intercept
@@ -183,9 +219,9 @@ findPowerFit <- function(depen, indep) {
     return(fit)
 }
 
-dat <- tst
-indep <- "priorbv"
-depen <- "bvgrowth"
+## dat <- tst
+## indep <- "priorbv"
+## depen <- "bvgrowth"
 
 ## ## Testing
 ## x <- lm(bvgrowth ~ poly(priorbv, 11), data = tst)
