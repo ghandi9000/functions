@@ -26,7 +26,8 @@ library(segmented)
 ## - Possible models: linear, power, polynomials, segmented linear
 removeCorr <- function(dat, models = c("lin","pow","poly","seg","bs"),
                        depen = "bvgrowth", indep = "priorbv", indep2 = "bv",
-                       degree = 9, debug = FALSE, scottLRS = FALSE) {
+                       degree = 9, debug = FALSE, scottLRS = FALSE,
+                       rgrLimits = c(0,10)) {
     if (length(models) < 1) stop("Must specify models: lin, pow, poly, seg, etc.")
     dep <- dat[,depen]
     ind <- dat[,indep]
@@ -121,6 +122,9 @@ removeCorr <- function(dat, models = c("lin","pow","poly","seg","bs"),
     }
     if (bestMOD == "bs") degree <- fit.info[["best"]]
     rgr = get(paste("rgr", bestMOD, sep = "."))
+    ## Set rgr to conform to rgrLimits
+    rgr[rgr > rgrLimits[2]] <- rgrLimits[2]
+    rgr[rgr < rgrLimits[1]] <- rgrLimits[1]
     data.frame(
         rgr = rgr,
         rmse = rep(get(paste0("rmse.", bestMOD)), length(rgr)),
@@ -272,17 +276,19 @@ bestSpline <- function(fits, ind2, dep, corr=0.05) {
     logLiks <- sapply(fits, logLik)
     rmses <- sapply(fits, function(x) sqrt(sum(residuals(x)^2)/length(x$fitted)))
     corrs <- sapply(fits, function(x) cor.test(dep/predict(x), ind2)$p.value)
-    if (length(which(corrs > corr)) > 0)
-        smallest <- min(which(corrs > corr))
-    else
-        smallest <- which(corrs == max(corrs))
+    ifelse (length(which(corrs > corr)) > 0,
+            { smallest <- min(which(corrs > corr)) },
+            { smallest <- which(corrs == max(corrs)) })
     best <- smallest # currently the best
     ## Test smallest against larger for significantly better models
     if (smallest < length(fits)) {
         others <- fits[(smallest+1):length(fits)]
         pvals <- sapply(others, function(x) anova(fits[[smallest]], x)$Pr[2])
-        if (length(which(pvals < corr)) > 0)
-            best <- min(which(pvals < corr)) + smallest ## update best fit
+        if (length(which(pvals < corr)) > 0) {
+            possible <- min(which(pvals < corr)) + smallest
+            if (corrs[possible] > corr) ## better model must also be uncorrelated
+                best <- possible  ## update best fit
+        }
     }
     return(list(best=best, smallest=smallest, degrees=c(1:length(fits)),
                 corrs=corrs, rmses=rmses, logLiks=logLiks, aics=aics))
