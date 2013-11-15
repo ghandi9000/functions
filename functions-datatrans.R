@@ -56,8 +56,9 @@ addDummies <- function(dat, ns) {
 
 ## Remove rows that have all NA values for given columns/yrs
 removeEmpty <- function(dat, ns, yrs) {
-    possibles <- unlist(lapply(ns, function (x) { paste0(x, times) } ))
+    indices <- which (names(dat) %in% ns)
     outdf <- dat
-    toKeep <- apply(dat[1,], 1, function(x) { any(!is.na(x%in%possibles)) })
+    toKeep <- apply(dat, 1, function(x) { any(!is.na(x[indices])) })
     return ( outdf[toKeep,] )
 }
+
