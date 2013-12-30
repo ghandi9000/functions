@@ -28,7 +28,7 @@ colTrans <- function(dat, times) {
             }
         }
     }
-    return (toTrans)
+    return ( toTrans )
 }
 
 ## Given a vector of column names and times, drop columns that vary by time except
@@ -42,7 +42,7 @@ makeLong <- function(dat, ns, times) {
                     v.names = ns,
                     times = times,
                     direction = "long")
-    return (long)
+    return ( long )
 }
 
 ## Makes dummy columns of NAs for long transform
@@ -51,7 +51,7 @@ addDummies <- function(dat, ns) {
     for (name in ns) {
         outdf[, name] <- rep(NA, nrow(dat))
     }
-    return (outdf)
+    return ( outdf )
 }
 
 ## Remove rows that have all NA values for given columns/yrs
