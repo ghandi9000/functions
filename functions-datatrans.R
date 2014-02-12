@@ -7,7 +7,7 @@
 
 ## check that columns exist, takes names of columns and year suffixes
 checkCols <- function(dat, ns, times) {
-    cnames <- unlist(lapply(ns, function (x) { paste0(x, times) } ))
+    cnames <- unlist(lapply(ns, function(x) { paste0(x, times) } ))
     return( cnames[!cnames %in% names(dat)] )
 }
 
@@ -34,7 +34,7 @@ colTrans <- function(dat, times) {
 ## Given a vector of column names and times, drop columns that vary by time except
 ##  for those specified, return dataframe in long format
 makeLong <- function(dat, ns, times) {
-    vnames <- lapply(ns, function (x) { paste0(x, times) } )
+    vnames <- lapply(ns, function(x) { paste0(x, times) } )
     trans = grep("[[:digit:]]", names(dat), value=TRUE)
     noTrans = names(dat)[!names(dat) %in% trans] ## save cols that dont vary by year
     outdf <- dat[,c(noTrans, unlist(vnames))]
