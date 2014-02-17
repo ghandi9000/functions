@@ -31,7 +31,7 @@ colTrans <- function(dat, times) {
     return ( toTrans )
 }
 
-## transform long to wide
+## Transform wide to long
 ## Given a vector of column names and times, drop columns that vary by time except
 ##  for those specified, return dataframe in long format
 makeLong <- function(dat, ns, times) {
