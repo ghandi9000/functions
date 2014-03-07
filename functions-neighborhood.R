@@ -115,6 +115,8 @@ make.neighbor.matrices <- function(targets, neighbors, sr, bigger=FALSE, ind.var
                               nebs$x, nebs$y, addifsame = FALSE)
                 bas[i,1:nrow(nebs)] <- nebs[,ind.var]
                 species[i,1:nrow(nebs)] <- nebs$spec
+                direction_x[i,1:nrow(nebs)] <- targets$x[i] - nebs$x
+                direction_y[i,1:nrow(nebs)] <- targets$y[i] - nebs$x
             }
         }
     }

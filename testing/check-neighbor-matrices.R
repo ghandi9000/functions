@@ -65,3 +65,10 @@ ggplot(tst, aes(x - 0.5, y - 0.5, col = type)) + geom_point() + xlim(0,10) + yli
 ## }
 ## max.neighbors
 
+## Check make.neighbor.matrices with realdist
+tst <- targets;
+names(tst)[which(names(tst) %in% c("bqudx", "bqudy"))] <- c("x", "y")
+tst.nebs <- neighbors
+names(tst.nebs)[which(names(tst.nebs) %in% c("bqudx", "bqudy"))] <- c("x", "y")
+foo <- make.neighbor.matrices(tst, tst.nebs, sr, ind.var = ind.var, bigger = TRUE,
+                              realdist = TRUE)
