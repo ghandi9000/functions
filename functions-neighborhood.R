@@ -39,13 +39,14 @@ neighdist<-function(targetx, targety, neighborx, neighbory, addifsame=FALSE) {
 }
 
 ## Function to create neighbor matrices.
-## Creates (in the calling environment) the following matrices with each row corresponding to a target
+## Returns list of the following matrices with each row corresponding to a target
 ##  and the columns to neighbors (number of columns = the maximum number of neighbors for a single target):
 ## ** Matrices:
 ## - distances: distance between targets and neighbors
 ## - species: species of neighbors
 ## - variable: the variable chosen to quantify neighbors (i.e. size)
-## - direction: direction from target to neighbors
+## - direction_x: direction from target to neighbors in x-direction
+## - direction_y: direction from target to neighbors in y-direction
 ##
 ## ** Parameters:
 ## - targets: subset of data containing the targets (i.e minus those that would fall in edge shadow)
@@ -61,10 +62,11 @@ make.neighbor.matrices <- function(targets, neighbors, sr, bigger=FALSE, ind.var
            max.neighbors <- maxneighbors(targets, neighbors, sr),
            max.neighbors <- maxneighbors2(targets, neighbors, sr))
                                         # initialize matrices
-    distances <<- matrix(NA, nrow=nrow(targets), ncol=max.neighbors)
-    bas <<- matrix(NA, nrow=nrow(targets), ncol=max.neighbors)
-    species <<- matrix(NA, nrow=nrow(targets), ncol=max.neighbors)
-    direction <<- matrix(NA, nrow=nrow(targets), ncol=max.neighbors)
+    distances <- matrix(NA, nrow=nrow(targets), ncol=max.neighbors)
+    bas <- matrix(NA, nrow=nrow(targets), ncol=max.neighbors)
+    species <- matrix(NA, nrow=nrow(targets), ncol=max.neighbors)
+    direction_x <- matrix(NA, nrow=nrow(targets), ncol=max.neighbors)
+    direction_y <- matrix(NA, nrow=nrow(targets), ncol=max.neighbors)
                                         # populate matrices
     if(realdist==FALSE) {
         for(i in 1:nrow(targets)) {
@@ -82,11 +84,13 @@ make.neighbor.matrices <- function(targets, neighbors, sr, bigger=FALSE, ind.var
                           bqudx > targets$bqudx[i]-sr & bqudy < targets$bqudy[i]+sr &
                           bqudy > targets$bqudy[i]-sr & time==targets$time[i]))
             if (nrow(nebs) > 0) {
-                distances[i,1:nrow(nebs)] <<-
+                distances[i,1:nrow(nebs)] <-
                 neighdist(targets$bqudx[i]*2,targets$bqudy[i]*2,
                           nebs$bqudx*2, nebs$bqudy*2, addifsame = TRUE)
-                bas[i,1:nrow(nebs)] <<- nebs[,ind.var]
-                species[i,1:nrow(nebs)] <<- nebs$spec
+                bas[i,1:nrow(nebs)] <- nebs[,ind.var]
+                species[i,1:nrow(nebs)] <- nebs$spec
+                direction_x[i,1:nrow(nebs)] <- targets$bqudx[i] - nebs$bqudx
+                direction_y[i,1:nrow(nebs)] <- targets$bqudy[i] - nebs$bqudx
             }
         }
     }
@@ -106,15 +110,17 @@ make.neighbor.matrices <- function(targets, neighbors, sr, bigger=FALSE, ind.var
                           get(ind.var) >= targets[,ind.var][i] &
                           time == targets$time[i]))
             if (nrow(nebs) > 0) {
-                distances[i,1:nrow(nebs)] <<-
+                distances[i,1:nrow(nebs)] <-
                     neighdist(targets$x[i],targets$y[i],
                               nebs$x, nebs$y, addifsame = FALSE)
-                bas[i,1:nrow(nebs)] <<- nebs[,ind.var]
-                species[i,1:nrow(nebs)] <<- nebs$spec
+                bas[i,1:nrow(nebs)] <- nebs[,ind.var]
+                species[i,1:nrow(nebs)] <- nebs$spec
             }
         }
     }
+    return( list(distances = distances, variable = bas, species = species,
+                 direction_x = direction_x, direction_y = direction_y) )
 }
 
 ## Function to calculate the direction to a neighbor
-direction <- function()
+## direction <- function()
