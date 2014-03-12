@@ -90,7 +90,7 @@ make.neighbor.matrices <- function(targets, neighbors, sr, bigger=FALSE, ind.var
                 bas[i,1:nrow(nebs)] <- nebs[,ind.var]
                 species[i,1:nrow(nebs)] <- nebs$spec
                 direction_x[i,1:nrow(nebs)] <- targets$bqudx[i] - nebs$bqudx
-                direction_y[i,1:nrow(nebs)] <- targets$bqudy[i] - nebs$bqudx
+                direction_y[i,1:nrow(nebs)] <- targets$bqudy[i] - nebs$bqudy
             }
         }
     }
@@ -116,7 +116,7 @@ make.neighbor.matrices <- function(targets, neighbors, sr, bigger=FALSE, ind.var
                 bas[i,1:nrow(nebs)] <- nebs[,ind.var]
                 species[i,1:nrow(nebs)] <- nebs$spec
                 direction_x[i,1:nrow(nebs)] <- targets$x[i] - nebs$x
-                direction_y[i,1:nrow(nebs)] <- targets$y[i] - nebs$x
+                direction_y[i,1:nrow(nebs)] <- targets$y[i] - nebs$y
             }
         }
     }
@@ -124,5 +124,9 @@ make.neighbor.matrices <- function(targets, neighbors, sr, bigger=FALSE, ind.var
                  direction_x = direction_x, direction_y = direction_y) )
 }
 
-## Function to calculate the direction to a neighbor
-## direction <- function()
+## Function to get number of quadrats in neighborhood not including targets' quadrat
+## **Expand to work for realdist later
+surround <- function(sr) {
+ (sr + 1)^2 - 1
+}
+

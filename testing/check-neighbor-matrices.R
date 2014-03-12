@@ -24,7 +24,7 @@ grew <- which(!is.na(targets[,dep.var]) & targets$spec==spec & targets[,dep.var]
 targets <- targets[grew,]
 
 ## Check neigbors and targets visually
-i <- 5
+i <- 29
 nebs <- subset(neighbors, pplot == targets$pplot[i] &
        tag!=targets$tag[i] & bqudx < targets$bqudx[i]+sr &
        bqudx > targets$bqudx[i]-sr & bqudy < targets$bqudy[i]+sr &
@@ -44,13 +44,17 @@ dim(foo[[1]])
 names(foo)
 
 ## check distance_x and distance_y calculations
-i <- 30
-tst <- data.frame(x = c(targets[i,]$bqudx, foo[[4]][i,] + targets[i,]$bqudx),
-                  y = c(targets[i,]$bqudy, foo[[5]][i,] + targets[i,]$bqudy),
+i <- 29
+tst <- data.frame(x = c(targets[i,]$bqudx, targets[i,]$bqudx - foo[[4]][i,]),
+                  y = c(targets[i,]$bqudy, targets[i,]$bqudy - foo[[5]][i,]),
                   type = c("target", rep("neighbor", length(foo[[1]][1,]))))
 
-ggplot(tst, aes(x - 0.5, y - 0.5, col = type)) + geom_point() + xlim(0,10) + ylim(0,10) +
+dev.new()
+ggplot(tst, aes(x - 0.5, y - 0.5, col = type)) + geom_jitter() + xlim(0,10) + ylim(0,10) +
     geom_hline(yintercept = seq(0,10)) + geom_vline(xintercept = seq(0,10))
+
+bqudx < targets$bqudx[i]+sr &
+       bqudx > targets$bqudx[i]-sr
 
 ## ## Max neighbors
 ## max.neighbors <- 0
