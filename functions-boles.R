@@ -206,3 +206,4 @@ make.working.dataset <- function(spp) {
 	dataset <- rbind(data86,data87,data98,data10)
 	dataset <- subset(dataset, PLOT > 3)
 }
+
