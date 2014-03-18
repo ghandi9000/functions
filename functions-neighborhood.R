@@ -49,25 +49,31 @@ neighdist<-function(targetx, targety, neighborx, neighbory, addifsame=FALSE) {
 ## - direction_y: direction from target to neighbors in y-direction
 ##
 ## ** Parameters:
-## - targets: subset of data containing the targets (i.e minus those that would fall in edge shadow)
-## - neighbors: subset of data including those in the edge shadow
+## - dat: data (targets will be created by removing those in the edge shadow)
+##  * targets: subset of data containing the targets (only includes "ALIVE")
+##  * neighbors: subset of data including those in the edge shadow (but not outside range)
 ## - sr: the radius around targets to search for neighbors
 ## - bigger: TRUE indicates that only neighbors larger than the target (by 'ind.var') should be counted
 ## - ind.var: variable to measure neighbors
 ## - realdist: FALSE indicates x,y-coordinates are in quadrats (location assumed to be center of quadrat),
 ##    TRUE indates exact x,y-coordinates (euclidean distances)
-make.neighbor.matrices <- function(targets, neighbors, sr, bigger=FALSE, ind.var="ba",
-                                   realdist=FALSE) {
+make.neighbor.matrices <- function(dat, sr, bigger=FALSE, ind.var="ba",
+                                   realdist=FALSE, range = 12) {
+    ## define targets and neighbors
+    targets <- subset(dat, bqudx < (12-sr) & bqudx > (-1 + sr) & bqudy < (12 - sr) &
+                      bqudy > (-1 + sr) & stat=="ALIVE")
+    neighbors <- subset(dat, bqudx < 11 & bqudx > 0 & bqudy < 11 &
+                        bqudy > 0 & stat=="ALIVE")
     ifelse(realdist==FALSE,
            max.neighbors <- maxneighbors(targets, neighbors, sr),
            max.neighbors <- maxneighbors2(targets, neighbors, sr))
-                                        # initialize matrices
+    ## initialize matrices
     distances <- matrix(NA, nrow=nrow(targets), ncol=max.neighbors)
     bas <- matrix(NA, nrow=nrow(targets), ncol=max.neighbors)
     species <- matrix(NA, nrow=nrow(targets), ncol=max.neighbors)
     direction_x <- matrix(NA, nrow=nrow(targets), ncol=max.neighbors)
     direction_y <- matrix(NA, nrow=nrow(targets), ncol=max.neighbors)
-                                        # populate matrices
+    ## populate matrices
     if(realdist==FALSE) {
         for(i in 1:nrow(targets)) {
             ifelse(bigger==TRUE,
@@ -124,9 +130,31 @@ make.neighbor.matrices <- function(targets, neighbors, sr, bigger=FALSE, ind.var
                  direction_x = direction_x, direction_y = direction_y) )
 }
 
+## Function to find targets for neighborhood analysis
+findTargets <- function(sr) {
+
+}
+
 ## Function to get number of quadrats in neighborhood not including targets' quadrat
 ## **Expand to work for realdist later
 surround <- function(sr) {
  (sr + 1)^2 - 1
 }
 
+## Function to extract the percentage of quadrats containing neighbors from
+##  list of neighbor matrices
+## - sr: square radius
+## - targets: dataframe containing targets (edge effects removed)
+## - nmatrices: result from running make.neighbor.matrices on targets
+##  - use mats[["direction_x"]]  and mats[["direction_y"]] from nmatrices
+percSurround <- function(sr, targets, nmatrices) {
+    nebsize <- surround(sr)
+    crowd <- sapply(1:nrow(targets), FUN = function(i) {
+        rows <- unique(data.frame(
+            row_x = mats[["direction_x"]][i,],
+            row_y = mats[["direction_y"]][i,]))
+        rows <- rows[complete.cases(rows),]
+        rows <- rows[!(rows[,1] == 0 & rows[,2] == 0),]
+        nrow(rows) / nebsize
+    })
+}
