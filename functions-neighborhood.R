@@ -2,7 +2,7 @@
 
 # function to find the maximum neighbors for a target given a neighborhood radius in
 #  real distance
-maxneighbors2 <- function(targets, neighbors, sr) {
+maxneighbors_real<- function(targets, neighbors, sr) {
     max.neighbors <- 0
     for(i in 1:nrow(targets)) {
         nebs <- subset(neighbors, pplot == targets$pplot[i] & tag!=targets$tag[i] &
@@ -15,7 +15,7 @@ maxneighbors2 <- function(targets, neighbors, sr) {
 }
 
 # function to calculate max neighbors, faster than apply, ~ 1.5 mins for sr2
-maxneighbors <- function(targets, neighbors, sr) {
+maxneighbors_disc <- function(targets, neighbors, sr) {
     max.neighbors <- 0
     for(i in 1:nrow(targets)) {
         nebs <- subset(neighbors, pplot==targets$pplot[[i]] & tag!=targets$tag[[i]] &
