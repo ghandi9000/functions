@@ -57,16 +57,16 @@ neighdist<-function(targetx, targety, neighborx, neighbory, addifsame=FALSE) {
 ## - ind.var: variable to measure neighbors
 ## - realdist: FALSE indicates x,y-coordinates are in quadrats (location assumed to be center of quadrat),
 ##    TRUE indates exact x,y-coordinates (euclidean distances)
-make.neighbor.matrices <- function(dat, sr, bigger=FALSE, ind.var="ba",
-                                   realdist=FALSE, range = 12) {
+make.neighbor.matrices <- function(, sr, ind.var="ba", range=12,
+                                   realdist=FALSE, bigger=FALSE) {
     ## define targets and neighbors
     targets <- subset(dat, bqudx < (12-sr) & bqudx > (-1 + sr) & bqudy < (12 - sr) &
                       bqudy > (-1 + sr) & stat=="ALIVE")
     neighbors <- subset(dat, bqudx < 11 & bqudx > 0 & bqudy < 11 &
                         bqudy > 0 & stat=="ALIVE")
-    ifelse(realdist==FALSE,
-           max.neighbors <- maxneighbors(targets, neighbors, sr),
-           max.neighbors <- maxneighbors2(targets, neighbors, sr))
+    ifelse(realdist,
+           { max.neighbors <- maxneighbors_real(targets, neighbors, sr) },
+           { max.neighbors <- maxneighbors_disc(targets, neighbors, sr) })
     ## initialize matrices
     distances <- matrix(NA, nrow=nrow(targets), ncol=max.neighbors)
     bas <- matrix(NA, nrow=nrow(targets), ncol=max.neighbors)
