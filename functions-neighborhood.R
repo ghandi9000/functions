@@ -1,4 +1,5 @@
 ## Functions used to create neighbor matrices and other similar tasks
+source("~/work/functions/neighborhoods/maxneighbors.R")
 
 # function to find the maximum neighbors for a target given a neighborhood radius in
 #  real distance
@@ -57,13 +58,13 @@ neighdist<-function(targetx, targety, neighborx, neighbory, addifsame=FALSE) {
 ## - ind.var: variable to measure neighbors
 ## - realdist: FALSE indicates x,y-coordinates are in quadrats (location assumed to be center of quadrat),
 ##    TRUE indates exact x,y-coordinates (euclidean distances)
-make.neighbor.matrices <- function(, sr, ind.var="ba", range=12,
+make.neighbor.matrices <- function(targets, neighbors, sr, ind.var="ba", range=12,
                                    realdist=FALSE, bigger=FALSE) {
     ## define targets and neighbors
-    targets <- subset(dat, bqudx < (12-sr) & bqudx > (-1 + sr) & bqudy < (12 - sr) &
-                      bqudy > (-1 + sr) & stat=="ALIVE")
-    neighbors <- subset(dat, bqudx < 11 & bqudx > 0 & bqudy < 11 &
-                        bqudy > 0 & stat=="ALIVE")
+    ## targets <- subset(dat, bqudx < (12-sr) & bqudx > (-1 + sr) & bqudy < (12 - sr) &
+    ##                   bqudy > (-1 + sr) & stat=="ALIVE")
+    ## neighbors <- subset(dat, bqudx < 11 & bqudx > 0 & bqudy < 11 &
+    ##                     bqudy > 0 & stat=="ALIVE")
     ifelse(realdist,
            { max.neighbors <- maxneighbors_real(targets, neighbors, sr) },
            { max.neighbors <- maxneighbors_disc(targets, neighbors, sr) })
@@ -157,4 +158,82 @@ percSurround <- function(sr, targets, nmatrices) {
         rows <- rows[!(rows[,1] == 0 & rows[,2] == 0),]
         nrow(rows) / nebsize
     })
+}
+
+#####################################################################################
+## Testing
+mnm <- function(targets, neighbors, sr, ind.var="ba", range=12,
+                                   realdist=FALSE, bigger=FALSE) {
+    ## define targets and neighbors
+    ## targets <- subset(dat, bqudx < (12-sr) & bqudx > (-1 + sr) & bqudy < (12 - sr) &
+    ##                   bqudy > (-1 + sr) & stat=="ALIVE")
+    ## neighbors <- subset(dat, bqudx < 11 & bqudx > 0 & bqudy < 11 &
+    ##                     bqudy > 0 & stat=="ALIVE")
+    ifelse(realdist,
+           { max.neighbors <- maxneighbors_real(targets, neighbors, sr) },
+           { max.neighbors <- maxnebs_disc(targets$tag, neighbors$tag,
+                                           neighbors$pplot, neighbors$stat,
+                                           neighbors$bqudx, neighbors$bqudy,
+                                           neighbors$time, sr) })
+    ## initialize matrices
+    distances <- matrix(NA, nrow=nrow(targets), ncol=max.neighbors)
+    bas <- matrix(NA, nrow=nrow(targets), ncol=max.neighbors)
+    species <- matrix(NA, nrow=nrow(targets), ncol=max.neighbors)
+    direction_x <- matrix(NA, nrow=nrow(targets), ncol=max.neighbors)
+    direction_y <- matrix(NA, nrow=nrow(targets), ncol=max.neighbors)
+    ## populate matrices
+    if(realdist==FALSE) {
+        for(i in 1:nrow(targets)) {
+            ifelse(bigger==TRUE,
+                   nebs <-
+                   subset(neighbors, pplot == targets$pplot[i] &
+                          tag!=targets$tag[i] & bqudx < targets$bqudx[i]+sr &
+                          bqudx > targets$bqudx[i]-sr & bqudy < targets$bqudy[i]+sr &
+                          bqudy > targets$bqudy[i]-sr &
+                          get(ind.var) >= targets[,ind.var][i] &
+                          time==targets$time[i]),
+                   nebs <-
+                   subset(neighbors, pplot == targets$pplot[i] &
+                          tag!=targets$tag[i] & bqudx < targets$bqudx[i]+sr &
+                          bqudx > targets$bqudx[i]-sr & bqudy < targets$bqudy[i]+sr &
+                          bqudy > targets$bqudy[i]-sr & time==targets$time[i]))
+            if (nrow(nebs) > 0) {
+                distances[i,1:nrow(nebs)] <-
+                neighdist(targets$bqudx[i]*2,targets$bqudy[i]*2,
+                          nebs$bqudx*2, nebs$bqudy*2, addifsame = TRUE)
+                bas[i,1:nrow(nebs)] <- nebs[,ind.var]
+                species[i,1:nrow(nebs)] <- nebs$spec
+                direction_x[i,1:nrow(nebs)] <- targets$bqudx[i] - nebs$bqudx
+                direction_y[i,1:nrow(nebs)] <- targets$bqudy[i] - nebs$bqudy
+            }
+        }
+    }
+    if(realdist==TRUE) {
+        for(i in 1:nrow(targets)) {
+            ifelse(bigger==TRUE,
+                   nebs <-
+                   subset(neighbors, pplot == targets$pplot[i] &
+                          tag!=targets$tag[i] &
+                          neighdist(x,y,targets$x[i], targets$y[i]) <= sr &
+                          get(ind.var) >= targets[,ind.var][i] &
+                          time == targets$time[i]),
+                   nebs <-
+                   subset(neighbors, pplot == targets$pplot[i] &
+                          tag!=targets$tag[i] &
+                          neighdist(x,y,targets$x[i], targets$y[i]) <= sr &
+                          get(ind.var) >= targets[,ind.var][i] &
+                          time == targets$time[i]))
+            if (nrow(nebs) > 0) {
+                distances[i,1:nrow(nebs)] <-
+                    neighdist(targets$x[i],targets$y[i],
+                              nebs$x, nebs$y, addifsame = FALSE)
+                bas[i,1:nrow(nebs)] <- nebs[,ind.var]
+                species[i,1:nrow(nebs)] <- nebs$spec
+                direction_x[i,1:nrow(nebs)] <- targets$x[i] - nebs$x
+                direction_y[i,1:nrow(nebs)] <- targets$y[i] - nebs$y
+            }
+        }
+    }
+    return( list(distances = distances, variable = bas, species = species,
+                 direction_x = direction_x, direction_y = direction_y) )
 }
