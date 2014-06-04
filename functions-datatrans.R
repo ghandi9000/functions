@@ -37,7 +37,7 @@ colTrans <- function(dat, times) {
 makeLong <- function(dat, ns, times) {
     vnames <- lapply(ns, function(x) { paste0(x, times) } )
     trans = grep("[[:digit:]]", names(dat), value=TRUE)
-    noTrans = names(dat)[!names(dat) %in% trans] ## save cols that dont vary by year
+    noTrans = names(dat)[!names(dat) %in% trans] # save cols that dont vary by year
     outdf <- dat[,c(noTrans, unlist(vnames))]
     long <- reshape(outdf, varying = vnames,
                     v.names = ns,
