@@ -1,7 +1,7 @@
 ## Functions used to create neighbor matrices and other similar tasks
 
 ## compile mnm and maxnebs_disc
-source("~/work/functions/neighborhoods/mnm.R")
+source("~/work/functions/neighborhoods/mnm2.R")
 
 ## Create neighborhood matrices by plot using mnm function
 ## Returns a list of neighborhood matrices for each plot
