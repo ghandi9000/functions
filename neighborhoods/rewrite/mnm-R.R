@@ -45,6 +45,7 @@ maxn <- function(tPars, nPars, dat, nRad) {
                         numNebs <- numNebs + 1
                 }
             }
+            print(numNebs)
             if (numNebs > thisMax) thisMax <- numNebs
         }
         data.frame(plot = unique(pp$pplot), maxn = thisMax)
@@ -73,7 +74,9 @@ tst <- data.frame(pplot = rep(1:3, each = 100),
                   bqudy = rep(quads$y, 3),
                   ba = NA,
                   time = 1,
-                  id = rep(1:100, 3))
+                  id = rep(1:100, 3),
+                  spec = rep("ABBA", 300),
+                  stat = rep("ALIVE", 300))
 
 ## Plot 1
 filled <- sample(100, 10)
@@ -84,3 +87,26 @@ plot(p1$bqudx, p1$bqudy, type = "n")
 text(p1[!is.na(p1$ba), "bqudx"],
      p1[!is.na(p1$ba), "bqudy"],
      labels = round(p1[!is.na(p1$ba), "ba"], 2))
+text(p1[!is.na(p1$ba), "bqudx"],
+     p1[!is.na(p1$ba), "bqudy"] + 0.25,
+     labels = p1[!is.na(p1$ba), "id"], col = "red")
+
+################################################################################
+##
+##                                Test isNeb
+##
+################################################################################
+targ <- 37
+neb <- 27
+
+
+################################################################################
+##
+##                                 Run test
+##
+################################################################################
+## Target and neighbor parameters
+tPars <- quote(spec == "ABBA" & pplot %in% c(1) & !is.na(ba) & ba > 0)
+nPars <- quote(neb$ba >= targ$ba) # & neb$ht >= targ$ht)
+
+mxx <- maxn(tPars=tPars, nPars=nPars, dat=tst, nRad=2)
