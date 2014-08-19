@@ -10,7 +10,7 @@
 ## neighbor parameters
 
 ## Determines if a tree is a legit neighbor of a target tree
-isNeb <- function(targ, neb, nRad, nPars) {
+is_Neb <- function(targ, neb, nRad, nPars) {
     return(targ$id != neb$id &
            targ$bqudx + nRad > neb$bqudx &
            targ$bqudx - nRad < neb$bqudx &
@@ -21,7 +21,8 @@ isNeb <- function(targ, neb, nRad, nPars) {
     )
 }
 
-isNeb2 <- function(targ, neb, nRad, nPars) {
+
+is_Neb2 <- function(targ, neb, nRad, nPars) {
     return(t)
 }
 
@@ -32,7 +33,7 @@ blah <- sapply(which(pp$targ), FUN = function(targ)
        apply(pp, 1, function(x) findNebs(pp[targ,], x, nRad, nPars))
 )
 
-findNebs <- function(targ, neb, nRad, nPars) {
+find_nebs <- function(targ, neb, nRad, nPars) {
     return(targ[["id"]] != neb[["id"]] &
            targ[["bqudx"]] + nRad > neb[["bqudx"]] &
            targ[["bqudx"]] - nRad < neb[["bqudx"]] &
@@ -42,12 +43,22 @@ findNebs <- function(targ, neb, nRad, nPars) {
            eval(nPars))
 }
 
+test <- lapply(targs, FUN = function(targ) {
+    target <- pp[targ,]
+    apply(pp, 1, function(neighbor) {
+        target$id != neighbor[["id"]]
+    })
+})
 ## Version I: two explicit inner loops
 ## compute max neighbor number for each plot
 maxn <- function(tPars, nPars, dPars, dat, nRad,
                  pLims=c(xlower=1, xupper=10, ylower=1, yupper=10),
                  cushion=TRUE) {
     require(plyr)
+    require(doMC)
+    registerDoMC() # start multicore procs
+
+    ## Trim data and create targets
     dd <- dat[eval(dPars, dat),]
     dd <- dd[dd$bqudx <= pLims["xupper"] &
              dd$bqudx >= pLims["xlower"] &
@@ -59,7 +70,9 @@ maxn <- function(tPars, nPars, dPars, dat, nRad,
            (dd$bqudx < pLims["xlower"] - 1 + nRad) |
            (dd$bqudy > pLims["yupper"] + 1 - nRad) |
            (dd$bqudy < pLims["ylower"] - 1 + nRad), "targ"] <- FALSE
-    maxes <- ddply(dd, .(pplot, time), function(pp) {
+
+    ## Main work done on pplot/time subsets
+    neighbors <- dlply(dd, .(pplot, time), .parallel = TRUE, function(pp) {
         targs = which(pp$targ)
         thisMax = numNebs = 0
         idMax = NA
@@ -204,7 +217,7 @@ dPars <- quote(!is.na(ba) &
                stat == "ALIVE" &
                !is.na(bqudx) &
                !is.na(bqudy))
-nRad <- 2
+nRad <- 3
 
 mxx <- maxn(tPars=tPars, nPars=nPars, dPars=dPars, dat=tst, nRad=nRad)
 
