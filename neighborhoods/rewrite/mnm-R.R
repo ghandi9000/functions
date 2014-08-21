@@ -9,8 +9,24 @@
 ## target parameters
 ## neighbor parameters
 
+## Parallel Setup
+## Windows
+require(doSNOW)
+cl <- makeCluster(6)
+registerDoSNOW(cl)
+system.time(a<-foreach(i=1:100000) %do% { i * 2 })
+system.time(a<-foreach(i=1:100000) %dopar% { i * 2 })
+stopCluster(cl)
+
+library(parallel)
+detectCores() # 8 logical cores, 4 physical
+cl <- makeCluster(4)
+system.time(blah <- parLapply(cl, 1:10000000, fun = function(i) i * 2))
+system.time(bb <- lapply(1:1000000, FUN = function(i) i * 2))
+stopCluster(cl)
+
 ## Determines if a tree is a legit neighbor of a target tree
-is_Neb <- function(targ, neb, nRad, nPars) {
+is_neb <- function(targ, neb, nRad, nPars) {
     return(targ$id != neb$id &
            targ$bqudx + nRad > neb$bqudx &
            targ$bqudx - nRad < neb$bqudx &
@@ -49,11 +65,13 @@ test <- lapply(targs, FUN = function(targ) {
         target$id != neighbor[["id"]]
     })
 })
+
 ## Version I: two explicit inner loops
 ## compute max neighbor number for each plot
 maxn <- function(tPars, nPars, dPars, dat, nRad,
                  pLims=c(xlower=1, xupper=10, ylower=1, yupper=10),
                  cushion=TRUE) {
+
     require(plyr)
     require(doMC)
     registerDoMC() # start multicore procs
@@ -92,6 +110,7 @@ maxn <- function(tPars, nPars, dPars, dat, nRad,
     })
     return( maxes )
 }
+
 
 ## Version II: One explicit inner loop
 ## compute max neighbor number for each plot
@@ -269,3 +288,53 @@ ps <- dat[dat$pplot %in% c(4,5,6), ]
 mxx <- maxn(tPars=tPars, nPars=nPars, dPars=dPars, dat=dat, nRad=nRad)
 
 mxx2 <- maxn2(tPars=tPars, nPars=nPars, dPars=dPars, dat=ps, nRad=nRad)
+
+## Version I: two explicit inner loops
+## compute max neighbor number for each plot
+maxn <- function(tPars, nPars, dPars, dat, nRad,
+                 pLims=c(xlower=1, xupper=10, ylower=1, yupper=10),
+                 cushion=TRUE) {
+    require(plyr)
+    require(doSNOW)
+    cl <- makeCluster(4, type = "SOCK")
+    registerDoSNOW(cl)
+
+    ## Trim data and create targets
+    dd <- dat[eval(dPars, dat),]
+    dd <- dd[dd$bqudx <= pLims["xupper"] &
+             dd$bqudx >= pLims["xlower"] &
+             dd$bqudy <= pLims["yupper"] &
+             dd$bqudy >= pLims["ylower"],]
+    dd$targ <- eval(tPars, dd)
+    if (cushion)
+        dd[(dd$bqudx > pLims["xupper"] + 1 - nRad) |
+           (dd$bqudx < pLims["xlower"] - 1 + nRad) |
+           (dd$bqudy > pLims["yupper"] + 1 - nRad) |
+           (dd$bqudy < pLims["ylower"] - 1 + nRad), "targ"] <- FALSE
+
+    ## Main work done on pplot/time subsets
+    neighbors <- dlply(dd, .(pplot, time), .parallel = TRUE, function(pp) {
+        source("~/work/functions/neighborhoods/rewrite/is-neb.R")
+        targs = which(pp$targ)
+        thisMax = numNebs = 0
+        idMax = NA
+        for (targ in targs) {
+            numNebs = 0
+            for (neb in 1:nrow(pp)) {
+                if (is_neb(targ = pp[targ,], neb = pp[neb,], nRad = nRad, nPars = nPars)) {
+                    numNebs = numNebs + 1
+                }
+            }
+            if (numNebs > thisMax) {
+                thisMax = numNebs
+                idMax = pp[targ, "id"]
+            }
+        }
+        data.frame(maxn = thisMax, id = idMax)
+    })
+    stopCluster(cl)
+    return( neighbors )
+}
+
+
+## Number of neighbor comparisons
