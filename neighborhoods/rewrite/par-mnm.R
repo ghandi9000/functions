@@ -84,14 +84,10 @@ dat <- read.csv("~/work/data/moose/moose-long.csv")
 ## Target and neighbor parameters
 tPars <- quote(spec == "ABBA" &
                !is.na(ba) &
-               ba > 0 &
-               !is.na(bagrowth) &
-               bagrowth >= 0 &
-               time == 98)
+               ba > 0)
 
 nPars <- quote(!is.na(neb$ba) &
-               neb$ba >= targ$ba &
-               neb$spec == "BECO")
+               neb$ba >= targ$ba)
 
 dPars <- quote(!is.na(ba) &
                stat == "ALIVE" &
@@ -107,13 +103,6 @@ nRad <- 3
 ## Run
 tst <- dat[dat$pplot %in% 4:10, ]
 mxx <- maxn(tPars=tPars, nPars=nPars, dPars=dPars, dat=dat, nRad=nRad)
-
-
-
-
-
-
-
 
 ################################################################################
 ##
@@ -158,7 +147,11 @@ Rprof(NULL)
 
 summaryRprof(tmp, lines = "show")
 
-## Test is_neb() function
+################################################################################
+##
+##                          Test is_neb() function
+##
+################################################################################
 library(rbenchmark)
 source("~/work/functions/neighborhoods/rewrite/is-neb.R")
 source("~/work/functions/neighborhoods/rewrite/is-neb-list.R")
@@ -176,3 +169,24 @@ benchmark(is_neb(targ, neb, nRad, nPars),
           order = "relative", replications = 50000)
 
 ## Note: with eval(nPars) 1.26 times slower
+
+################################################################################
+##
+##                          Compare versions of mnm
+##
+################################################################################
+source("~/work/functions/neighborhoods/rewrite/parameters.R")
+source("~/work/functions/neighborhoods/rewrite/mnm1.R")
+source("~/work/functions/neighborhoods/rewrite/mnm2.R")
+source("~/work/functions/neighborhoods/rewrite/is-neb.R")
+source("~/work/functions/neighborhoods/rewrite/is-neb-list.R")
+source("~/work/functions/neighborhoods/rewrite/is-neb-noeval.R")
+
+## test data
+tst <- dat[dat$pplot %in% 4:5, ]
+
+benchmark(
+    mnm1(tPars = tPars, nPars = nPars, dPars = dPars, dat = tst, nRad = nRad),
+    mnm2(tPars = tPars, nPars = nPars, dPars = dPars, dat = tst, nRad = nRad),
+    columns = c("test", "replications", "elapsed", "relative"),
+    order = "relative", replications = 1)
