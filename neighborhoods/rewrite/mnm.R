@@ -24,6 +24,7 @@
 ## pLims: upper and lower bounds for x,y coordinates for targets/neighbors
 ## cushion: logical value, if TRUE no targets are used within 1 nRad of
 ##  upper/lower pLim
+## parallel: run the computation in parallel (usually slower due to overhead)
 mnm <- function(tPars, nPars, dPars, nCols, dat, nRad,
                  pLims=c(xlower=1, xupper=10, ylower=1, yupper=10),
                  cushion=TRUE, parallel=FALSE) {
@@ -73,9 +74,14 @@ mnm <- function(tPars, nPars, dPars, nCols, dat, nRad,
                 targ[["bqudy"]] - nRad < neb[["bqudy"]] &
                 targ[["time"]] == neb[["time"]], names(neb) %in% nCols]
         })
-        list(neighbors = neighbors, targets = neb[targs,],
-             plot = unique(neb[["pplot"]]), time = unique(neb[["time"]]))
+        list(neighbors = neighbors, targets = neb[targs,])
     })
+
+    ## Save parameter information
+    attr(neighborhood, "radius") <- nRad
+    attr(neighborhood, "neighbor_par") <- nPars
+    attr(neighborhood, "target_par") <- tPars
+    attr(neighborhood, "data_par") <- dPars
 
     if (parallel)
         stopCluster(cl)

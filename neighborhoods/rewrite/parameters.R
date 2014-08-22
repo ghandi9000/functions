@@ -1,7 +1,7 @@
 ## Target and neighbor parameters
-tPars <- quote(spec == "ABBA" &
-               !is.na(ba) &
-               ba > 0)
+tPars <- quote(!is.na(ba) &
+               ba > 0 &
+               spec %in% c("ABBA", "BECO", "PIRU"))
 
 nPars <- quote(!is.na(neighbor[["ba"]]) &
                neighbor[["ba"]] >= target[["ba"]])
@@ -19,6 +19,17 @@ dPars <- quote(!is.na(ba) &
                pplot > 3)
 nRad <- 3
 
+## Compare parallel and sequential versions
+library(rbenchmark)
+benchmark(
+    tst1 <- mnm(tPars = tPars, nPars = nPars, dPars = dPars, nCols = nCols,
+               nRad = nRad, dat = dat, parallel=T),
+    tst2 <- mnm(tPars = tPars, nPars = nPars, dPars = dPars, nCols = nCols,
+               nRad = nRad, dat = dat, parallel=F),
+    columns = c("test", "replications", "elapsed", "relative"),
+    order = "relative", replications = 1
+    )
 
-## tst <- mnm(tPars = tPars, nPars = nPars, dPars = dPars, nCols = nCols,
-##            nRad = nRad, dat = dat)
+tst <- mnm(tPars = tPars, nPars = nPars, dPars = dPars, nCols = nCols,
+           nRad = nRad, dat = dat, parallel=F)
+
