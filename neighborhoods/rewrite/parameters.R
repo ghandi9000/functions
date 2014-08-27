@@ -19,20 +19,3 @@ dPars <- quote(!is.na(ba) &
                pplot > 3)
 nRad <- 2
 
-## Compare parallel and sequential versions
-source("~/work/functions/neighborhoods/rewrite/mnm.R")
-library(rbenchmark)
-dat <- read.csv("~/work/data/moose/moose-long.csv")
-
-benchmark(
-    tst1 <- mnm(tPars = tPars, nPars = nPars, dPars = dPars, nCols = nCols,
-               nRad = nRad, dat = dat, parallel=T),
-    tst2 <- mnm(tPars = tPars, nPars = nPars, dPars = dPars, nCols = nCols,
-               nRad = nRad, dat = dat, parallel=F),
-    columns = c("test", "replications", "elapsed", "relative"),
-    order = "relative", replications = 1
-    )
-
-tst <- mnm(tPars = tPars, nPars = nPars, dPars = dPars, nCols = nCols,
-           nRad = nRad, dat = dat, parallel=F)
-
