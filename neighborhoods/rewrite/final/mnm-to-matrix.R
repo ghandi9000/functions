@@ -3,8 +3,6 @@
 ##                        Convert mnm to matrix form
 ##
 ################################################################################
-source("~/work/functions/neighborhoods/rewrite/run-mnm.R")
-
 ## Converts neighborhoods in list format to neighborhoods in matrix format
 ## nLst: neighborhoods in list format (output from mnm)
 mnm_to_matrix <- function(nLst) {

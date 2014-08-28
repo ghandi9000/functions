@@ -1,6 +1,6 @@
-source("~/work/functions/neighborhoods/rewrite/parameters.R")
-source("~/work/functions/neighborhoods/rewrite/mnm.R")
-source("~/work/functions/neighborhoods/rewrite/mnm-to-matrix.R")
+source("~/work/functions/neighborhoods/rewrite/final/parameters.R")
+source("~/work/functions/neighborhoods/rewrite/final/mnm.R")
+source("~/work/functions/neighborhoods/rewrite/final/mnm-to-matrix.R")
 
 ## data
 dat <- read.csv("~/work/data/moose/moose-long.csv", stringsAsFactors = F)
