@@ -40,6 +40,12 @@ mnm_to_matrix <- function(nLst) {
     nMats[["plot"]] <- targets$pplot
     nMats[["time"]] <- targets$time
 
+    ## Save some attributes from neighborhood
+    attr(nMats, "radius") <- attr(nLst, "radius")
+    attr(nMats, "neighbor_par") <- attr(nLst, "neighbor_par")
+    attr(nMats, "target_par") <- attr(nLst, "target_par")
+    attr(nMats, "data_par") <- attr(nLst, "data_par")
+
     return ( nMats )
 }
 
