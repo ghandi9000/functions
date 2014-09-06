@@ -4,29 +4,28 @@
 ##
 ################################################################################
 ## Polar to cartesian
-## deg: if theta is in degrees
-pol2cart <- function(r, theta, deg = FALSE) {
+## deg: if input theta is in degrees
+pol2cart <- function(r, theta, deg = FALSE, recycle = FALSE) {
     if (deg) theta <- theta * pi/180
+    if (length(r) > 1 && length(r) != length(theta) && !recycle)
+        stop("'r' vector different length than theta, if recycling 'r' values is desired 'recycle' must be TRUE")
     xx <- r * cos(theta)
     yy <- r * sin(theta)
     ## Account for machine error in trig functions
-    if (abs(xx) < 2e-16) xx <- 0
-    if (abs(yy) < 2e-16) yy <- 0
-    return( c(x = xx, y = yy) )
+    xx[abs(xx) < 2e-15] <- 0
+    yy[abs(yy) < 2e-15] <- 0
+    return( cbind(x = xx, y = yy) )
 }
 
 ## Cartesian to polar
-## deg: if theta is in degrees
+## deg: returns theta in degrees
 cart2pol <- function(x, y, deg = FALSE) {
     r <- sqrt(x^2 + y^2)
     theta <- atan(y / x)
-    if (x < 0) {
-        theta <- theta + pi
-    } else if (y < 0) {
-        theta <- theta + 2*pi
-    }
+    theta[x < 0] <- theta[x < 0] + pi
+    theta[x >= 0 & y < 0] <- theta[x >= 0 & y < 0] + 2*pi
     if (deg) theta <- theta * 180/pi
-    return( c(r = r, theta = theta) )
+    return( cbind(r = r, theta = theta) )
 }
 
 ## Rotate point about origin by angle
