@@ -38,3 +38,10 @@ rotate_point <- function(x, y, theta_r, deg = FALSE) {
     p <- matrix(c(x,y))
     return ( rot %*% p )
 }
+
+## Euclidean distance
+euc <- function(pxi, pyi, pxs, pys, recycle=FALSE) {
+    if (!recycle && length(pxi) > 1 && length(pxi) != length(pxs))
+        stop("Should initial points be recycled?")
+    return( sqrt((pxi - pxs)^2 + (pyi - pys)^2) )
+}
