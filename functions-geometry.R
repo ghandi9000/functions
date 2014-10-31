@@ -40,11 +40,11 @@ tri_projection <- function(a, b, c) {
 }
 
 ## ## Three points in 3d and the plane they make
-library(scatterplot3d)
-tst <- scatterplot3d(xyz.coords(xyz), xlim = c(-2,2), ylim=c(-2,2), zlim=c(-2,2),
-                     col.axis = "blue")
-tst$points3d(0, 0, 0, col="red")
-tst$plane3d(-2, x.coef = -2, y.coef = -2)
+## library(scatterplot3d)
+## tst <- scatterplot3d(xyz.coords(xyz), xlim = c(-2,2), ylim=c(-2,2), zlim=c(-2,2),
+##                      col.axis = "blue")
+## tst$points3d(0, 0, 0, col="red")
+## tst$plane3d(-2, x.coef = -2, y.coef = -2)
 
 ## library(geometry)
 ## require(rgl)
