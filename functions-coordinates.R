@@ -48,5 +48,7 @@ rotate_point <- function(x, y, theta_r, deg = FALSE) {
 euc <- function(a, b) {
     a <- as.matrix(a)
     b <- as.matrix(b)
+    if (dim(b)[2] == 1)
+        b <- matrix(rep(b, dim(a)[2]), dim(a)[1])
     return ( sqrt(colSums((a-b)^2)) )
 }
