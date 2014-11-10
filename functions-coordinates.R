@@ -14,7 +14,9 @@ pol2cart <- function(r, theta, deg = FALSE, recycle = FALSE) {
     ## Account for machine error in trig functions
     xx[abs(xx) < 2e-15] <- 0
     yy[abs(yy) < 2e-15] <- 0
-    return( cbind(x = xx, y = yy) )
+    out <- cbind(xx, yy)
+    colnames(out) <- c("x", "y")
+    return( out )
 }
 
 ## Cartesian to polar
@@ -25,7 +27,9 @@ cart2pol <- function(x, y, deg = FALSE) {
     theta[x < 0] <- theta[x < 0] + pi
     theta[x >= 0 & y < 0] <- theta[x >= 0 & y < 0] + 2*pi
     if (deg) theta <- theta * 180/pi
-    return( cbind(r = r, theta = theta) )
+    out <- cbind(r, theta)
+    names(out) <- c("r", "theta")
+    return( out )
 }
 
 ## Rotate point about origin by angle
