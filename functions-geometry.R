@@ -1,17 +1,18 @@
-################################################################################
-##
-##                                 Geometry
-##
-################################################################################
-
+### functions-geometry.R --- 
+## Filename: functions-geometry.R
+## Description: Various functions related to geometry
+## Author: Noah Peart
+## Created: Mon Nov 10 13:07:36 2014 (-0500)
+## Last-Updated: Mon Nov 10 13:08:36 2014 (-0500)
+##           By: Noah Peart
+######################################################################
 ################################################################################
 ##
 ##                               Solid angles
 ##
 ################################################################################
-
-## http://en.wikipedia.org/wiki/Subtended_angle
 ## Solid angle subtended by circular cone of opening angle, theta
+## http://en.wikipedia.org/wiki/Subtended_angle
 sr_cone <- function(theta, deg=FALSE) {
     if (deg) theta <- theta * pi/180
     2*pi*(1 - cos(theta/2))
