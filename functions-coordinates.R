@@ -56,3 +56,38 @@ euc <- function(a, b) {
         b <- matrix(rep(b, dim(a)[2]), dim(a)[1])
     return ( sqrt(colSums((a-b)^2)) )
 }
+
+################################################################################
+##
+##                           Homogenous rotations
+##
+################################################################################
+## Rotate about x-axis by theta
+rx <- function(theta) {
+    res <- matrix(c(1, 0, 0, 0,
+                    0, cos(theta), sin(theta), 0,
+                    0, -sin(theta), cos(theta), 0,
+                    0, 0, 0, 1), nrow = 4, ncol = 4)
+    res[abs(res) < 2e-15] <- 0
+    return( res )
+}
+
+## Rotate around y-axis
+ry <- function(theta) {
+    res <- matrix(c(cos(theta), 0, -sin(theta), 0,
+                      0, 1, 0, 0,
+                      sin(theta), 0, cos(theta), 0,
+                      0, 0, 0, 1), nrow = 4, ncol = 4)
+    res[abs(res) < 2e-15] <- 0
+    return( res )
+}
+
+## Rotate around z-axis
+rz <- function(theta) {
+    res <- matrix(c(cos(theta), sin(theta), 0, 0,
+                      -sin(theta), cos(theta), 0, 0,
+                      0, 0, 1, 0,
+                    0, 0, 0, 1), nrow = 4, ncol = 4)
+    res[abs(res) < 2e-15] <- 0
+    return( res )
+}
