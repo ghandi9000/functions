@@ -91,3 +91,8 @@ rz <- function(theta) {
     res[abs(res) < 2e-15] <- 0
     return( res )
 }
+
+## Rotate 3D object
+euler <- function(alpha, beta, gamma) {
+    return( rz(alpha) %*% ry(beta) %*% rz(gamma) )
+}
