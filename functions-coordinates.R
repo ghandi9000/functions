@@ -62,7 +62,7 @@ euc <- function(a, b) {
 ##                           Homogenous rotations
 ##
 ################################################################################
-## Rotate about x-axis by theta
+## Rotate counter-clockwise around x-axis by theta
 rx <- function(theta) {
     res <- matrix(c(1, 0, 0, 0,
                     0, cos(theta), sin(theta), 0,
@@ -72,7 +72,7 @@ rx <- function(theta) {
     return( res )
 }
 
-## Rotate around y-axis
+## Rotate counter-clockwise around y-axis
 ry <- function(theta) {
     res <- matrix(c(cos(theta), 0, -sin(theta), 0,
                       0, 1, 0, 0,
@@ -82,7 +82,7 @@ ry <- function(theta) {
     return( res )
 }
 
-## Rotate around z-axis
+## Rotate counter-clockwise around z-axis
 rz <- function(theta) {
     res <- matrix(c(cos(theta), sin(theta), 0, 0,
                       -sin(theta), cos(theta), 0, 0,
