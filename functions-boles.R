@@ -7,7 +7,7 @@
 ##################################################################
 ### kozak taper equation, returns diameter, d, at specified height, h
 ### funny volumes below 0.9 DBH, so small trees excluded
-kozak2004 <- function(D,H,species,h) {
+kozak2004 <- function(D, H, species, h) {
 	if(species == "ABBA") {
 		a0 = 0.911
 		a1 = 1.026
@@ -35,20 +35,20 @@ kozak2004 <- function(D,H,species,h) {
 	Q <- 1-z^(1/3)
 	X <- (1-(h/H)^(1/3))/(1-p^(1/3))
 	d <- a0*(D^a1)*(H^a2)*X^(b1*(z^4)+b2*(1/exp(D/H))+b3*(X^0.1)+b4*(1/D)+b5*(H^Q)+b6*X)
-	return(d);
+	return( d );
 }
 
 ### Smalian formula, D1 and D2 are diameters at each end of log, L is length
 ### returns volume in cubic m
-smalian <- function(D1,D2,L) {
+smalian <- function(D1, D2, L) {
 	D1 <- 0.00007854*(D1^2)
 	D2 <- 0.00007854*(D2^2)
 	volume = ((D1+D2)/2)*L
-	return(volume)
+	return( volume )
 }
 
 ### Honer eq 1965
-honer <- function(D,H,species) {
+honer <- function(D, H, species) {
 	D <- 0.393700787*D
 	H <- 3.2808399*H
 	if(species == "ABBA") {
@@ -60,11 +60,12 @@ honer <- function(D,H,species) {
 		b = 363.676
 	}
 	V = 0.0283168466*D^2/(a+(b/H))
-	return(V)
+	return( V )
 }
+
 ### this version of the honer equation takes dbh in cm and height in m
 ### thus returning cubic meter
-honer2 <- function(dbh,height,species) {
+honer2 <- function(dbh, height, species) {
 	if(species == "BECO") { a0 = 2.222; a1 = 91.554; a2 = 0.0043222 }
 	if(species == "BEAL") { a0 = 1.449; a1 = 105.081; a2 = 0.004320 }
 	if(species == "ACSA" | species == "ACSP" | species == "ACPE") {
@@ -75,24 +76,24 @@ honer2 <- function(dbh,height,species) {
 		a0=0.959; a1 = 102.056; a2 = 0.004334 }
 	if(species == "PRPE" | species == "SOAM") { a0 = 0.033; a1 = 119.889; a2 = 0.004334 }
 	V = (a2*dbh^2)/(a0+(a1/height))
-	return(V)
+	return( V )
 }
 
 ###################### Bole Volume Formula For Kozak BV ##########################
-bolevol <- function(dbh,ht,species) {
+bolevol <- function(dbh, ht, species) {
 	increment <- ht/10
 	heights <- seq(from=0,to=ht, by = increment)
 	diams <- kozak2004(dbh,ht,species=species,heights)
 	volume = 0
 	for(j in 1:10) { volume=volume+smalian(diams[[j]],diams[[j+1]],increment) }
-	return(volume)
+	return( volume )
 }
 
 ###################### Clark BV Equation #########################################
 ### Requires trees to be 17.3 feet tall and 5 in diameter
 ### input units are dbh in cm, height in m, output is in m^3
 
-clark <- function(dbh,height,species) {
+clark <- function(dbh, height, species) {
 	##### Species Parameters ########################
 	if(species=="PRPE" | species=="SOAM") { a1 = 0.92487; b1 = -0.89867;  r = 37.12714; c = 0.48776; e = 1.50579;
 		p = 6.18866; b = 1.64261; a = 0.55071 }
@@ -151,7 +152,7 @@ clark <- function(dbh,height,species) {
 	(b/3)*((U3-17.3)^3-(L3-17.3)^3)/(H-17.3)^2 +
 	I5*(1/3)*((1-b)/a^2)*(a*(H-17.3)-(L3-17.3))^3/(H-17.3)^2 -
 	I6*(1/3)*((1-b)/a^2)*(a*(H-17.3)-(U3-17.3))^3/(H-17.3)^2))
-	return(V*0.0283168466)
+	return( V*0.0283168466 )
 }
 
 ## This is awful, but its the function used to create subsets of data used during
