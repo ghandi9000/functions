@@ -28,7 +28,7 @@
 mnm <- function(tPars, nPars, dPars, nCols, dat, nRad,
                  pLims=c(xlower=1, xupper=10, ylower=1, yupper=10),
                  cushion=TRUE, parallel=FALSE) {
-    require(plyr)
+    ## require(plyr)  # causes problems in code where dplyr is loaded
     if (parallel) {
         require(parallel)
         require(doSNOW)
