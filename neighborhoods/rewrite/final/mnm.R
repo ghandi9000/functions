@@ -1,10 +1,11 @@
-################################################################################
-##
-##                               Neighborhoods
-##
-## * Stable version of mnm
-##
-################################################################################
+### mnm.R --- 
+## Filename: mnm.R
+## Description: Neighbor matrices
+## Author: Noah Peart
+## Created: Tue Apr 14 12:02:03 2015 (-0400)
+## Last-Updated: Tue Apr 14 12:02:18 2015 (-0400)
+##           By: Noah Peart
+######################################################################
 ## Returns a list of neighborhood data for each target in every combination of
 ## plot/time period.  Targets are determined by parameters (i.e. spec == "ABBA").
 ## Neighbors of a given target are determined by another set of parameters
