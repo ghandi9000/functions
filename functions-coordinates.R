@@ -1,8 +1,5 @@
-################################################################################
-##
-##             Functions having to do with coordinate tranforms
-##
-################################################################################
+## coordinate transforms
+
 ## Polar to cartesian
 ## deg: if input theta is in degrees
 pol2cart <- function(r, theta, deg = FALSE, recycle = FALSE) {
